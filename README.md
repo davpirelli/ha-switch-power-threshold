@@ -3,6 +3,10 @@
 ## Overview
 
 The DEV blueprint is designed to monitor the total power consumption and automatically turn off specified switches when the consumption exceeds a predefined threshold. It includes options for custom actions and notifications.
+
+You can import this blueprint here:
+<a href="https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fdavpirelli%2Fha-switch-power-threshold%2F"><img src="https://my.home-assistant.io/badges/blueprint_import.svg"></a>
+
 <img width="1055" alt="image" src="https://github.com/davpirelli/ha-switch-power-threshold/assets/6840116/0435cd96-646c-4521-a8db-937b00374e90">
 
 ## Configuration
