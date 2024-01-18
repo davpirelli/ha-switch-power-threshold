@@ -1,0 +1,80 @@
+blueprint:
+  name: Power Threshold Auto Switch Off
+  description: Check total consumption and turn off the devices based on their priority. 
+  domain: automation
+
+  input:
+    total_power:
+      name: Total power (W)
+      description: Select the sensor that represent the sum of all the switches' consumption in W. To find out how to create one, visit the github page.
+      selector:
+        entity:
+          domain: sensor
+
+    threshold:
+      name: Maximum Threshold in W
+      description: Enter the threshold in W which, if exceeded, will trigger the cascade shutdown event of the switches (only those turned on)
+      default: 100
+
+    check_delay:
+      name: Check delay (seconds)
+      description: Enter the delay in seconds that must pass after the first switch turns off. If after x seconds the consumption is again higher than the threshold, repeat the shutdown with the second switch and so on.
+      default: 5
+
+    notify_devices:
+      name: Devices to notify (Push)
+      description: A list of devices (with the HomeAssistant app installed) to be notified when the threshold is exceeded.
+      selector:
+        device:
+          integration: mobile_app
+          multiple: true
+
+    switch_entities:
+      name: List of switches to turn off
+      description: Insert the switches in order of priority (the first will be the first to be turned off).
+      selector:
+        entity:
+          domain: switch
+          multiple: true
+
+    custom_actions:
+      name: Custom Actions
+      description: Other actions to perform when the threshold is reached (e.g. pushing a notification, TTS announcement, ...)
+      selector:
+        action: {}
+
+variables:
+  threshol_var: !input threshold
+  totalpower_var: !input total_power
+  switches_var: !input switch_entities
+  delay_var: !input check_delay
+
+trigger:
+  platform: numeric_state
+  entity_id: !input "total_power"
+  above: !input "threshold"
+
+action:
+  - repeat:
+      for_each: !input notify_devices
+      sequence:
+        - service: "notify.mobile_app_{{ device_attr(repeat.item, 'name') | slugify }}"
+          data:
+            title: Threshold exceeded
+            message: "Your power is more than {{ threshol_var }} W. Actual {{ states(totalpower_var) }} W."
+  - choose: []
+    default: !input custom_actions
+  - repeat:
+      count: "{{ switches_var | length }}"
+      sequence:
+        - service: switch.turn_off
+          target:
+            entity_id: "{{ switches_var[repeat.index - 1] }}"
+        - delay: "00:00:{{ delay_var }}"
+  - repeat:
+      for_each: !input notify_devices
+      sequence:
+        - service: "notify.mobile_app_{{ device_attr(repeat.item, 'name') | slugify }}"
+          data:
+            title: Automation ended
+            message: "All the switches were turned off."
